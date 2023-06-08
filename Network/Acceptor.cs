@@ -5,20 +5,35 @@ using NLog;
 namespace NetShare_Core.Network
 {
     public class Acceptor
-    {   
-        
+    {
+
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-        
-        public static readonly int[] UDP_LISTEN_ORDER = { 545 , 546, 547 };
+
+        public static readonly int[] UDP_LISTEN_ORDER = { 545, 546, 547 };
         private Socket _TCPServer;
         private Socket _UDPServer;
         private bool _isTCPRunning;
         private bool _isUDPRunning;
 
+        public bool IsTCPRunning
+        {
+            get
+            {
+                return _isTCPRunning;
+            }
+        }
+        public bool IsUDPRunning
+        {
+            get
+            {
+                return _isUDPRunning;
+            }
+        }
+
         public int TCPPort
         {
             get
-            {   
+            {
                 return ((IPEndPoint)_TCPServer.LocalEndPoint).Port;
             }
         }
@@ -26,7 +41,7 @@ namespace NetShare_Core.Network
         public int UDPPort
         {
             get
-            {   
+            {
                 return ((IPEndPoint)_UDPServer.LocalEndPoint).Port;
             }
         }
@@ -34,7 +49,7 @@ namespace NetShare_Core.Network
         {
             InitTCPServer();
 
-            if(!_isTCPRunning)
+            if (!_isTCPRunning)
                 return;
 
             Task.Factory.StartNew(() =>
@@ -44,7 +59,7 @@ namespace NetShare_Core.Network
 
             InitUDPServer();
 
-            if(!_isUDPRunning)
+            if (!_isUDPRunning)
                 return;
 
             Task.Factory.StartNew(() =>
@@ -54,13 +69,14 @@ namespace NetShare_Core.Network
         }
 
         private void InitTCPServer()
-        {   
+        {
             try
             {
                 _TCPServer = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 _TCPServer.Bind(new IPEndPoint(IPAddress.Any, 0));
                 _TCPServer.Listen(10);
-            }catch
+            }
+            catch
             {
                 logger.Error("TCP Server failed to bind to any port");
                 _isTCPRunning = false;
@@ -71,8 +87,8 @@ namespace NetShare_Core.Network
         }
 
         private void InitUDPServer()
-        {   
-            if(!_isTCPRunning)
+        {
+            if (!_isTCPRunning)
             {
                 logger.Error("TCP Server is not running, UDP Server cannot be started");
                 return;
@@ -80,23 +96,23 @@ namespace NetShare_Core.Network
 
             _UDPServer = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
-            foreach(int port in UDP_LISTEN_ORDER)
+            foreach (int port in UDP_LISTEN_ORDER)
             {
                 try
-                {   
+                {
                     logger.Info("Attempting to bind to port {0}", port);
                     _UDPServer.Bind(new IPEndPoint(IPAddress.Any, port));
                     logger.Info("UDP Server is listening on port {0}", port);
                     _isUDPRunning = true;
                     break;
                 }
-                catch 
+                catch
                 {
                     logger.Warn("UDP Server failed to bind to port {0}", port);
                 }
             }
 
-            if(_isUDPRunning == false)
+            if (_isUDPRunning == false)
             {
                 logger.Error("UDP Server failed to bind to any port");
                 return;
@@ -104,11 +120,11 @@ namespace NetShare_Core.Network
         }
 
         private void BeginUDPAccept()
-        {   
-            
+        {
+
             byte[] dummyBuffer = new byte[1024];
-            byte[] tcpServerPortByteValue = BitConverter.GetBytes(TCPPort); 
-            while(true)
+            byte[] tcpServerPortByteValue = BitConverter.GetBytes(TCPPort);
+            while (true)
             {
                 EndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
                 _UDPServer.ReceiveFrom(dummyBuffer, ref remoteEP);
@@ -120,19 +136,19 @@ namespace NetShare_Core.Network
         private void BeginTCPAccept()
         {
             while (true)
+            {
+                Socket clientSocket = _TCPServer.Accept();
+                logger.Info("Accepted connection from {0}", clientSocket.RemoteEndPoint);
+                NetShareSocket netShareSocket = new NetShareSocket(clientSocket);
+                Task.Factory.StartNew(() =>
                 {
-                    Socket clientSocket = _TCPServer.Accept();
-                    logger.Info("Accepted connection from {0}", clientSocket.RemoteEndPoint);
-                    NetShareSocket netShareSocket = new NetShareSocket(clientSocket);
-                    Task.Factory.StartNew(() =>
-                    {
-                        string request = netShareSocket.Receive();
-                        string response = NetShareProtocol.GenerateResponse(request);
-                        netShareSocket.Send(response);
-                        logger.Info("Sent response to {0}", clientSocket.RemoteEndPoint);
-                        netShareSocket.Terminate();
-                    });
-                }
+                    string request = netShareSocket.Receive();
+                    string response = NetShareProtocol.GenerateResponse(request);
+                    netShareSocket.Send(response);
+                    logger.Info("Sent response to {0}", clientSocket.RemoteEndPoint);
+                    netShareSocket.Terminate();
+                });
+            }
         }
 
     }

@@ -4,14 +4,23 @@ using System.Net.Sockets;
 namespace NetShare_Core.Network
 {
     public class FileReceiverSocket
-    {   
+    {
         private static int BUFFER_SIZE = 1024;
         private Socket _socket;
         private string _filePath;
         private long _fileSize;
         private long _bytesReceived;
         private IPEndPoint _endPoint;
-        
+        private bool _isFailed;
+
+        public bool IsFailed
+        {
+            get
+            {
+                return _isFailed;
+            }
+        }
+
         public long BytesReceived
         {
             get
@@ -27,11 +36,9 @@ namespace NetShare_Core.Network
                 return _fileSize;
             }
         }
-        public FileReceiverSocket(IPAddress adress,int port, string filePath,long fileSize)
-        {   
-            if(System.IO.File.Exists(filePath))
-                throw new System.IO.IOException("File already exists.");
-
+        public FileReceiverSocket(IPAddress adress, int port, string filePath, long fileSize)
+        {
+            _isFailed = false;
             _endPoint = new IPEndPoint(adress, port);
             _filePath = filePath;
             _fileSize = fileSize;
@@ -42,7 +49,15 @@ namespace NetShare_Core.Network
 
             Task.Factory.StartNew(() =>
             {
-                ReceiveFile();
+                try
+                {
+                    ReceiveFile();
+                }
+                catch (Exception)
+                {
+                    _isFailed = true;
+                }
+
             });
         }
 

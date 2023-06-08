@@ -47,7 +47,7 @@ namespace NetShare_Core.Network
 
             int readBytes = 0;
 
-            using (FileStream _fileStream = new FileStream(_filePath, FileMode.Open))
+            using (FileStream _fileStream = new FileStream(_filePath, FileMode.Open,FileAccess.Read))
             {
                 while ((readBytes = _fileStream.Read(buffer, 0, BUFFER_SIZE)) > 0)
                 {

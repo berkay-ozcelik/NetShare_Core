@@ -13,6 +13,11 @@ namespace NetShare_Core.Entity
 		public long FileSize { get; set; }
 		public string FileExtension { get; set; }
 
+		[JsonIgnore]
+		private FileStream _lock;
+		
+		
+
 		public SharingFile(FileInfo fileInfo)
 		{
 			FileName = fileInfo.Name;
@@ -48,7 +53,16 @@ namespace NetShare_Core.Entity
 				FileExtension == sharingFile.FileExtension;
 		}
 
-		
+		public void LockFile()
+		{
+			_lock = File.Open(FilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+		}
+
+		public void UnlockFile()
+		{
+            _lock.Close();
+        }
+
 		public override string ToString()
 		{
 			return $"{FileName} ({FileSize} bytes)";
