@@ -35,6 +35,11 @@ namespace NetShare
         private Facade()
         {
             _downloadDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Downloads");
+            
+            if (!Directory.Exists(_downloadDirectory))
+            {
+                Directory.CreateDirectory(_downloadDirectory);
+            }
         }
 
         public void StartAcceptor()
