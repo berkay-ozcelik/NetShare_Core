@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Net;
 namespace NetShare_Core.Entity
 {
     public class DeviceInfo

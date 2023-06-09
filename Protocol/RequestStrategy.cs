@@ -1,7 +1,5 @@
-using System;
 using NetShare_Core.Network;
 using NetShare_Core.Entity;
-using System.Net;
 using NetShare_Core.Device;
 
 namespace NetShare_Core.Protocol

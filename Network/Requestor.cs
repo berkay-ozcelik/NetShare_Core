@@ -1,8 +1,5 @@
-using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using NetShare_Core.Device;
 using NetShare_Core.Entity;
 using NetShare_Core.Protocol;
 using NLog;

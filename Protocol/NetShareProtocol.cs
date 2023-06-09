@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text.Json;
 using NetShare_Core.Device;
 using NetShare_Core.Entity;
@@ -38,10 +37,6 @@ namespace NetShare_Core.Protocol
     public static class NetShareProtocol
     {   
         
-        private static readonly string IDENTIFICATION = "ID";
-        private static readonly string FILE_LIST = "FL";
-        private static readonly string GET_FILE = "GF";
-        
         private static RequestStrategy _identificationRequestStrategy;
         private static RequestStrategy _fileListRequestStrategy;
         private static RequestStrategy _getFileRequestStrategy;
@@ -77,7 +72,7 @@ namespace NetShare_Core.Protocol
             return FileManager.Deserialize(response);
         }
 
-        public static string GetFileRequest(NetShare_Core.Entity.SharingFile requestedFile)
+        public static string GetFileRequest(SharingFile requestedFile)
         {
             return new NetShareRequest(
                 NetShareProtocolHeader.GET_FILE, 

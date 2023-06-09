@@ -1,39 +1,19 @@
-using System.ComponentModel;
-
+using NetShare_Core.Listener;
 namespace NetShare
 {
+
+   
+
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            Facade.Instance.StartAcceptor();
-            
-            REFRESH:
-            Facade.Instance.DiscoverDevices();
-            
-            Console.Write("Select device:");
-            int index = int.Parse(Console.ReadLine());
+            // The name of the Named Pipe to create (same as the client)
+            string _pipeName = "NetShare";
 
-            if (index < 0)
-                goto REFRESH;
+            var commandListener = new CommandListener(_pipeName);
 
-            Facade.Instance.SelectDevice(index);
-
-            Facade.Instance.GetSharingFiles();
-            Console.Write("Select file:");
-            index = int.Parse(Console.ReadLine());
-            Facade.Instance.SelectFile(index);
-            
-            //Navigate to download directory
-            Console.Write("Enter download directory:");
-            string downloadDirectory = Console.ReadLine();
-            Facade.Instance.SetDownloadDirectory(downloadDirectory);
-
-            Facade.Instance.DownloadFile();
-
-
-
-            Console.ReadKey();
+            commandListener.Start();
         }
     }
 }

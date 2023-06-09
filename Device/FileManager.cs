@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.Json;
+﻿using System.Text.Json;
 using NetShare_Core.Entity;
 
 namespace NetShare_Core.Device
@@ -12,15 +11,6 @@ namespace NetShare_Core.Device
         {
             Instance = new FileManager();
 
-
-#if DEBUG
-            var currentDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
-            var files = currentDirectory.GetFiles();
-            foreach (var file in files)
-            {
-                Instance.AddFile(file);
-            }
-#endif
         }
 
 
@@ -49,15 +39,12 @@ namespace NetShare_Core.Device
             return _sharingFiles.Find(file => file.Equals(key));
         }
 
-        public void RemoveFile(SharingFile sharingFile)
+        public void RemoveFile(int index)
         {   
-            var actualFile = GetFile(sharingFile);
-            if (actualFile != null)
-            {
-                actualFile?.UnlockFile();
-                _sharingFiles.Remove(actualFile);
-            }
+            var actualFile = _sharingFiles[index];
             
+            actualFile.UnlockFile();
+            _sharingFiles.RemoveAt(index);
         }
 
         public string Serialize()

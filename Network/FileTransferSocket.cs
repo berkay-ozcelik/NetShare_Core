@@ -5,7 +5,7 @@ namespace NetShare_Core.Network
 {
     public class FileSenderSocket
     {   
-        private static int BUFFER_SIZE = 1024;
+        private static int BUFFER_SIZE = 1;
         private Socket _socket;
         private string _filePath;
         private int _port;

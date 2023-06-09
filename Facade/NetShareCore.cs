@@ -1,4 +1,3 @@
-using System;
 using NetShare_Core.Network;
 using NetShare_Core.Entity;
 using NetShare_Core.Device;
@@ -8,41 +7,31 @@ using NetShare_Core.Protocol;
 namespace NetShare
 {
 
-    public class Facade
+    public static class Facade
     {
-        private static Facade _instance;
+        
+        private static Acceptor _acceptor;
+        private static DeviceInfo[] _devices;
+        private static int _selectedDeviceIndex;
+        private static List<SharingFile> _sharingFilesOfSelectedDevice;
+        private static int _selectedFileIndex;
+        private static string _downloadDirectory;
+        private static Dictionary<int,FileReceiverSocket> _activeDownloads;
+        private static int _downloadId;
 
-        public static Facade Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    _instance = new Facade();
-                }
-                return _instance;
-            }
-        }
-
-        private Acceptor _acceptor;
-        private DeviceInfo[] _devices;
-        private int _selectedDeviceIndex;
-        private List<SharingFile> _sharingFilesOfSelectedDevice;
-        private int _selectedFileIndex;
-
-        private string _downloadDirectory;
-
-        private Facade()
+        
+        static Facade()
         {
             _downloadDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Downloads");
-            
+            _activeDownloads = new Dictionary<int,FileReceiverSocket>();
+            _downloadId = 0;
             if (!Directory.Exists(_downloadDirectory))
             {
                 Directory.CreateDirectory(_downloadDirectory);
             }
         }
 
-        public void StartAcceptor()
+        public static void StartAcceptor()
         {
             _acceptor = new Acceptor();
 
@@ -57,19 +46,15 @@ namespace NetShare
             }
         }
 
-        public void DiscoverDevices()
+        public static DeviceInfo[] DiscoverDevices()
         {
             _devices = Requestor.Discover();
             _sharingFilesOfSelectedDevice = null;
 
-            // Print devices with index
-            for (int i = 0; i < _devices.Length; i++)
-            {
-                Console.WriteLine($"[{i}] {_devices[i]}");
-            }
+            return _devices;
         }
 
-        public void SelectDevice(int index)
+        public static void SelectDevice(int index)
         {
             if (_devices == null)
             {
@@ -84,7 +69,7 @@ namespace NetShare
             _selectedDeviceIndex = index;
         }
 
-        public void GetSharingFiles()
+        public static List<SharingFile> GetSharingFiles()
         {
             var selectedDevice = _devices[_selectedDeviceIndex];
 
@@ -96,14 +81,10 @@ namespace NetShare
 
             _sharingFilesOfSelectedDevice = NetShareProtocol.FileListResponse(response);
 
-            // Print files with index
-            for (int i = 0; i < _sharingFilesOfSelectedDevice.Count; i++)
-            {
-                Console.WriteLine($"[{i}] {_sharingFilesOfSelectedDevice[i]}");
-            }
+            return _sharingFilesOfSelectedDevice;
         }
 
-        public void SelectFile(int index)
+        public static void SelectFile(int index)
         {
             if (_sharingFilesOfSelectedDevice == null)
             {
@@ -118,7 +99,7 @@ namespace NetShare
             _selectedFileIndex = index;
         }
 
-        public void SetDownloadDirectory(string directory)
+        public static void SetDownloadDirectory(string directory)
         {
             if (!Directory.Exists(directory))
             {
@@ -128,12 +109,15 @@ namespace NetShare
             _downloadDirectory = directory;
         }
 
-        public void DownloadFile()
-        {
 
+        public static int StartDownload()
+        {
 
             var selectedDevice = _devices[_selectedDeviceIndex];
             var selectedFile = _sharingFilesOfSelectedDevice[_selectedFileIndex];
+            
+            //TODO: Check if selected file still sharing
+            
             var filePath = Path.Combine(_downloadDirectory, selectedFile.FileName);
 
             if (File.Exists(filePath))
@@ -149,30 +133,59 @@ namespace NetShare
 
                 var port = NetShareProtocol.GetFileResponse(response);
 
-                var fileReceiverSocket = new FileReceiverSocket(
+                FileReceiverSocket activeDownload = new FileReceiverSocket(
                     tcpServerEndpoint.Address,
                     port,
                     filePath,
                     selectedFile.FileSize);
 
-                while (fileReceiverSocket.BytesReceived < fileReceiverSocket.FileSize)
-                {
-                    if (fileReceiverSocket.IsFailed)
-                    {
-                        throw new Exception($"Error while downloading file at byte {fileReceiverSocket.BytesReceived}");
-                    }
-                    Console.WriteLine($"Received {fileReceiverSocket.BytesReceived} bytes out of {fileReceiverSocket.FileSize} bytes.");
-                }
-                Console.WriteLine($"Received {fileReceiverSocket.BytesReceived} bytes out of {fileReceiverSocket.FileSize} bytes.");
+                _activeDownloads.Add(++_downloadId, activeDownload);
+
+                return _downloadId;
+               
             }
             catch
-            {
-                throw new Exception("Error while downloading file");
+            {   
+                
+                throw new Exception("Error while starting download");
             }
 
         }
 
-        public void ShareFile(string filePath)
+        public static int GetDownloadProgress(int downloadId)
+        {
+            FileReceiverSocket activeDownload;
+            
+            if (!_activeDownloads.TryGetValue(downloadId,out activeDownload))
+                throw new Exception("No download in progress with given ID");
+
+            if(activeDownload.IsCanceled)
+                throw new Exception("Download canceled");
+
+            if (activeDownload.IsFailed)
+                throw new Exception("Download failed");
+
+            if (activeDownload.IsCompleted)
+                return 100;
+
+            var received = activeDownload.BytesReceived;
+            var total = activeDownload.FileSize;
+            var progress = (int)(received * 100 / total);
+
+            return progress;
+        }
+        
+        public static void StopDownload(int downloadId)
+        {
+            FileReceiverSocket activeDownload;
+
+            if (!_activeDownloads.TryGetValue(downloadId, out activeDownload))
+                throw new Exception("No download in progress with given ID");
+
+            activeDownload.Stop();
+        }
+
+        public static void ShareFile(string filePath)
         {
             if (!File.Exists(filePath))
             {
@@ -182,19 +195,14 @@ namespace NetShare
             FileManager.Instance.AddFile(filePath);
         }
 
-        public void StopShareFile(string fileName, long fileSize, string fileExtension)
+        public static void StopShareFile(int index)
         {
-            SharingFile sharingFile = new SharingFile();
-            sharingFile.FileName = fileName;
-            sharingFile.FileExtension = fileExtension;
-            sharingFile.FileSize = fileSize;
-
-            FileManager.Instance.RemoveFile(sharingFile);
+            FileManager.Instance.RemoveFile(index);
         }
 
-        public void GetSharingFilesOfCurrentDevice()
+        public static List<SharingFile> GetSharingFilesOfCurrentDevice()
         {
-            FileManager.Instance.SharingFiles.ForEach(file => Console.WriteLine(file));
+            return FileManager.Instance.SharingFiles;
         }
 
 

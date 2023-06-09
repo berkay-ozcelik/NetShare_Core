@@ -5,19 +5,36 @@ namespace NetShare_Core.Network
 {
     public class FileReceiverSocket
     {
-        private static int BUFFER_SIZE = 1024;
+        private static int BUFFER_SIZE = 1;
         private Socket _socket;
         private string _filePath;
         private long _fileSize;
         private long _bytesReceived;
         private IPEndPoint _endPoint;
         private bool _isFailed;
+        private bool _cancellationToken;
 
         public bool IsFailed
         {
             get
             {
                 return _isFailed;
+            }
+        }
+
+        public bool IsCanceled
+        {
+            get
+            {
+                return _cancellationToken;
+            }
+        }
+
+        public bool IsCompleted
+        {
+            get
+            {
+                return _bytesReceived == _fileSize;
             }
         }
 
@@ -57,6 +74,10 @@ namespace NetShare_Core.Network
                 {
                     _isFailed = true;
                 }
+                finally
+                {
+                    _socket.Close();
+                }
 
             });
         }
@@ -71,11 +92,20 @@ namespace NetShare_Core.Network
             {
                 while ((readBytes = _socket.Receive(buffer)) > 0)
                 {
+                    if (_cancellationToken)
+                    {
+                        break;
+                    }
                     _bytesReceived += readBytes;
                     fileStream.Write(buffer, 0, readBytes);
                 }
             }
+
         }
 
+        public void Stop()
+        {
+            _cancellationToken = true;
+        }
     }
 }
