@@ -76,7 +76,7 @@ namespace NetShare_Core.Listener
 
         }
 
-        private void WriteAll(NamedPipeServerStream pipeServer, Encoding encoding, string data)
+        private static void WriteAll(NamedPipeServerStream pipeServer, Encoding encoding, string data)
         {
             byte[] buffer = encoding.GetBytes(data);
             byte[] bufferSize = BitConverter.GetBytes(buffer.Length);
