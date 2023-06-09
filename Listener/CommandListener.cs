@@ -1,4 +1,5 @@
-﻿using NLog;
+﻿using NetShare_Core.Entity;
+using NLog;
 using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
