@@ -69,6 +69,11 @@ namespace NetShare_Core.Network
                 try
                 {
                     ReceiveFile();
+
+                    if (_cancellationToken)
+                    {
+                        File.Delete(_filePath);
+                    }
                 }
                 catch (Exception)
                 {
@@ -76,6 +81,7 @@ namespace NetShare_Core.Network
                 }
                 finally
                 {
+
                     _socket.Close();
                 }
 

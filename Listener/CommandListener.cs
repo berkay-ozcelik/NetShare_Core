@@ -39,6 +39,8 @@ namespace NetShare_Core.Listener
 
                         string rawRequest = ReadAll(pipeServer, _encoding);
 
+                        logger.Info("Received request from client: " + rawRequest);
+
                         Command command = CommandContext.GetCommand(rawRequest);
 
                         CommandResult commandResult = command.Execute();
