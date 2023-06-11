@@ -193,7 +193,7 @@ namespace NetShare
             }
             var fileInfo = new FileInfo(filePath);
             
-            var file = FileManager.Instance.SharingFiles.Find(f => fileInfo.Name == filePath);
+            var file = FileManager.Instance.SharingFiles.Find(f => fileInfo.FullName == f.FilePath);
             if (file != null)
                 throw new Exception("File is already sharing");
 
