@@ -191,9 +191,9 @@ namespace NetShare
             {
                 throw new Exception("File does not exist");
             }
-
-            //Check if file is already sharing
-            var file = FileManager.Instance.SharingFiles.Find(f => f.FilePath == filePath);
+            var fileInfo = new FileInfo(filePath);
+            
+            var file = FileManager.Instance.SharingFiles.Find(f => fileInfo.Name == filePath);
             if (file != null)
                 throw new Exception("File is already sharing");
 
