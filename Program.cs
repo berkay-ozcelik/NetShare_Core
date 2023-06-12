@@ -9,7 +9,7 @@ namespace NetShare
         static void Main()
         {
             // The name of the Named Pipe to create (same as the client)
-            string endPoint = "127.0.0.1:545";
+            string endPoint = "127.0.0.1:4791";
 
             var commandListener = new CommandListener(endPoint);
 

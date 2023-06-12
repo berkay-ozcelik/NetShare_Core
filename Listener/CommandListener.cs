@@ -24,15 +24,15 @@ namespace NetShare_Core.Listener
         }
 
         public void Start()
-        {   
+        {
 
             using (Socket pipeServer = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
             {
                 pipeServer.Bind(IPEndPoint.Parse(_endPoint));
 
-                logger.Info("Named Pipe server is waiting for connection");
+                logger.Info("Pipe server is waiting for connection @" + _endPoint);
 
-                
+
                 pipeServer.Listen(1);
 
                 Socket pipeClient = pipeServer.Accept();
@@ -61,7 +61,7 @@ namespace NetShare_Core.Listener
                 }
                 catch (IOException)
                 {
-                    
+
                     logger.Info("Client disconnected.");
                 }
             }
@@ -97,7 +97,7 @@ namespace NetShare_Core.Listener
             buffer.CopyTo(message, bufferSize.Length);
 
             pipeClient.Send(message);
-            
+
         }
     }
 }
